@@ -1,0 +1,44 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{geometry}
+\geometry{margin=1in}
+\usepackage{enumitem}
+\usepackage{xcolor}
+
+\title{Differentiation Solution}
+\author{Mathematics Engine}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section*{Differentiation}
+
+\textbf{Problem:} Find the derivative of:
+\[ f(x) = sin(x^2) \]
+
+\textbf{Solution:}
+
+\begin{enumerate}
+\item Initial expression
+\[ ∂/∂x(sin(x^2)) \]
+
+\item Power Rule: ∂/∂x(x\textasciicircum{}n) = n * x\textasciicircum{}(n-1)
+\[ ∂/∂x(x^2) \]
+
+\item Power Rule: ∂/∂x(x) = 1
+\[ ∂/∂x(x) = 1 \]
+
+\item Chain Rule: ∂/∂x(sin(u)) = cos(u) * u'
+\[ ∂/∂x(sin(x^2)) = cos(x^2) * ∂/∂x(x^2) \]
+
+\item Final derivative
+\[ f'(x) = cos(x^2) ⋅ ((2 ⋅ (x^1)) ⋅ 1) \]
+
+\end{enumerate}
+
+\textbf{Final Answer:}
+\[ \frac{d}{dx}\left[sin(x^2)\right] = \cos\left({x}^{2.0000}\right) \cdot 2.0000 \cdot x \]
+
+\end{document}

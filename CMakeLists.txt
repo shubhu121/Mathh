@@ -22,6 +22,9 @@ set(SOURCES
     src/engine/differentiator.cpp
     src/engine/integrator.cpp
     src/engine/simplifier.cpp
+    src/engine/limit_calculator.cpp
+    src/engine/matrix_operations.cpp
+    src/engine/latex_exporter.cpp
     src/ui/renderer.cpp
     src/ui/text_renderer.cpp
     src/ui/plotter.cpp
