@@ -204,7 +204,9 @@ int main(int argc, char* argv[]) {
                             currentMode = Mode::DEFINITE_INTEGRATION;
                             currentExpression = defaultIntegralExpressions[0];
                             scrollOffset = 0;
-                            processDefiniteIntegration();
+                            boundsInputMode = true;
+                            editingLowerBound = true;
+                            SDL_StartTextInput();
                             std::cout << "Switched to DEFINITE INTEGRATION mode\n";
                             break;
                         case SDLK_UP:
@@ -228,7 +230,9 @@ int main(int argc, char* argv[]) {
                                 currentMode = Mode::DEFINITE_INTEGRATION;
                                 currentExpression = defaultIntegralExpressions[0];
                                 scrollOffset = 0;
-                                processDefiniteIntegration();
+                                boundsInputMode = true;
+                                editingLowerBound = true;
+                                SDL_StartTextInput();
                             }
                             break;
                     }
@@ -516,11 +520,15 @@ int main(int argc, char* argv[]) {
                 
                 plotter.render();
                 
-                // Plot original function f(x) in blue
-                plotter.plotFunction(ast.get(), 0.3f, 0.6f, 1.0f);
+                // Plot antiderivative F(x) in green (first, so it's behind)
+                if (result) {
+                    plotter.plotFunction(result.get(), 0.3f, 1.0f, 0.3f);
+                }
                 
-                // Plot antiderivative F(x) in green
-                plotter.plotFunction(result.get(), 0.3f, 1.0f, 0.3f);
+                // Plot original function f(x) in blue (on top)
+                if (ast) {
+                    plotter.plotFunction(ast.get(), 0.3f, 0.6f, 1.0f, 2.5f);
+                }
                 
                 // Restore viewport
                 glViewport(0, 0, renderer.getWidth(), renderer.getHeight());
