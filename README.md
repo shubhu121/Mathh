@@ -94,6 +94,69 @@ cmake --build .
 ./math_engine.exe
 ```
 
+## 🐧 Linux Build Instructions
+
+MathEngineUTF8 now supports native Linux builds 🎉  
+Follow the steps below to compile and run it easily.
+
+---
+
+### 🧩 Prerequisites
+
+Make sure you have all required development tools and libraries:
+
+```bash
+sudo apt update
+sudo apt install build-essential pkg-config libsdl2-dev libsdl2-ttf-dev libglew-dev libgl1-mesa-dev
+```
+
+## ⚙️ Building the Project
+
+### Clone the repository and switch into it:
+
+```
+git clone https://github.com/YOUR_USERNAME/Mathh.git
+cd Mathh
+
+```
+
+ Run the included Linux build script:
+ ```
+ ./build/build_linux.sh
+```
+
+This script will:
+
+1. Compile all source files using g++ -std=c++17
+
+2. Use pkg-config to link against SDL2, SDL2_ttf, GLEW, and OpenGL
+
+3. Output the executable MathEngineUTF8 inside the build/ directory
+
+
+## Running the Program
+
+```
+./build/MathEngineUTF8
+
+```
+you should see output like :
+
+```
++===================================+
+|  Mathematics Engine - Calculus    |
++===================================+
+
+```
+
+### 💡 Notes
+
+- The Linux build script is located at: `build/build_linux.sh`  
+- You can edit it if you use a different compiler or custom flags.  
+- The script won’t affect Windows or other build systems.
+
+
+
 ## 🎮 Controls
 
 ### Main Menu
