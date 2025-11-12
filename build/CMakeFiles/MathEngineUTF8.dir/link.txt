@@ -1,0 +1,3 @@
+"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -E rm -f CMakeFiles\MathEngineUTF8.dir/objects.a
+C:\msys64\mingw64\bin\ar.exe qc CMakeFiles\MathEngineUTF8.dir/objects.a @CMakeFiles\MathEngineUTF8.dir\objects1.rsp
+C:\msys64\mingw64\bin\g++.exe -g  -static-libgcc -static-libstdc++ -Wl,-Bstatic,--whole-archive -lwinpthread -Wl,--no-whole-archive -Wl,--whole-archive CMakeFiles\MathEngineUTF8.dir/objects.a -Wl,--no-whole-archive -o MathEngineUTF8.exe -Wl,--out-implib,libMathEngineUTF8.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles\MathEngineUTF8.dir\linkLibs.rsp

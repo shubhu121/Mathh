@@ -1,0 +1,1 @@
+ C:/msys64/mingw64/lib/libSDL2main.a C:/msys64/mingw64/lib/libSDL2.dll.a -lSDL2_ttf -lopengl32 -lGLEW::GLEW -lshell32 -Wl,--undefined=WinMain -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32 

@@ -14,11 +14,11 @@ void NumericalMethods::newtonRaphson(const ASTNode* func, double x0, int maxIter
     
     NumericalStep step2;
     step2.description = "Initial guess:";
-    step2.expression = "x₀ = " + std::to_string(x0);
+    step2.expression = "x(0) = " + std::to_string(x0);
     steps.push_back(step2);
     
     NumericalStep step3;
-    step3.description = "Formula: xₙ₊₁ = xₙ - f(xₙ)/f'(xₙ)";
+    step3.description = "Formula: x(n+1) = x(n) - f(x(n))/f'(x(n))";
     step3.expression = "";
     steps.push_back(step3);
     
@@ -162,7 +162,7 @@ void NumericalMethods::trapezoidalRule(const ASTNode* func, double a, double b, 
     
     NumericalStep step4;
     step4.description = "Formula:";
-    step4.expression = "∫f(x)dx ≈ h/2 × [f(x₀) + 2f(x₁) + 2f(x₂) + ... + 2f(xₙ₋₁) + f(xₙ)]";
+    step4.expression = "Integral f(x)dx ~ h/2 * [f(x0) + 2f(x1) + 2f(x2) + ... + 2f(x(n-1)) + f(xn)]";
     steps.push_back(step4);
     
     double sum = func->evaluate(a) + func->evaluate(b);
@@ -227,7 +227,7 @@ void NumericalMethods::simpsonsRule(const ASTNode* func, double a, double b, int
     
     NumericalStep step4;
     step4.description = "Formula:";
-    step4.expression = "∫f(x)dx ≈ h/3 × [f(x₀) + 4f(x₁) + 2f(x₂) + 4f(x₃) + ... + f(xₙ)]";
+    step4.expression = "Integral f(x)dx ~ h/3 * [f(x0) + 4f(x1) + 2f(x2) + 4f(x3) + ... + f(xn)]";
     steps.push_back(step4);
     
     double sum = func->evaluate(a) + func->evaluate(b);

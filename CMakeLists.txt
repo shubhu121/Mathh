@@ -40,6 +40,7 @@ set(SOURCES
     src/engine/numerical_methods.cpp
     src/engine/eigenvalues.cpp
     src/engine/statistics.cpp
+    src/engine/polynomial_operations.cpp
     src/ui/renderer.cpp
     src/ui/text_renderer.cpp
     src/ui/plotter.cpp

@@ -24,7 +24,9 @@
 #include "engine/numerical_methods.h"
 #include "engine/eigenvalues.h"
 #include "engine/statistics.h"
+#include "engine/polynomial_operations.h"
 #include <iomanip>
+#include <sstream>
 #include "ui/renderer.h"
 #include "ui/text_renderer.h"
 #include "ui/plotter.h"
@@ -51,7 +53,8 @@ enum class Mode {
     SEQUENCES_SERIES,
     NUMERICAL_METHODS,
     EIGENVALUES,
-    STATISTICS
+    STATISTICS,
+    POLYNOMIAL_OPERATIONS
 };
 
 // Default example expressions for differentiation
@@ -292,26 +295,47 @@ int main(int argc, char* argv[]) {
     // Complex Numbers mode variables
     std::vector<ComplexStep> complexSteps;
     double complexA1 = 3.0, complexB1 = 4.0;  // 3+4i
+    bool complexInputMode = false;
+    std::string complexA1Str = "3.0", complexB1Str = "4.0";
+    int complexInputField = 0;  // 0=real, 1=imaginary
     
     // Sequences & Series mode variables
     std::vector<SequenceStep> sequenceSteps;
     double seqA = 2.0, seqD = 3.0;  // Arithmetic: a=2, d=3
     int seqN = 10;  // Number of terms
+    bool seqInputMode = false;
+    std::string seqAStr = "2.0", seqDStr = "3.0", seqNStr = "10";
+    int seqInputField = 0;  // 0=a, 1=d, 2=n
     
     // Numerical Methods mode variables
     std::vector<NumericalStep> numericalSteps;
     double numX0 = 1.0;  // Initial guess for Newton-Raphson
     int numIterations = 10;
     double numTolerance = 0.0001;
+    bool numConfigMode = false;
+    std::string numX0Str = "1.0";
     
     // Eigenvalues mode variables
     std::vector<EigenStep> eigenSteps;
     double eigenA = 2.0, eigenB = 1.0;
     double eigenC = 1.0, eigenD = 2.0;  // Matrix [[2,1],[1,2]]
+    bool eigenInputMode = false;
+    std::string eigenAStr = "2.0", eigenBStr = "1.0", eigenCStr = "1.0", eigenDStr = "2.0";
+    int eigenInputField = 0;  // 0=a, 1=b, 2=c, 3=d
     
     // Statistics mode variables
     std::vector<StatisticsStep> statsSteps;
     std::vector<double> statsData = {2.0, 4.0, 6.0, 8.0, 10.0};
+    bool statsInputMode = false;
+    std::string statsDataStr = "2, 4, 6, 8, 10";
+    
+    // Polynomial Operations mode variables
+    std::vector<PolynomialStep> polySteps;
+    double polyA = 1.0, polyB = -5.0, polyC = 6.0;  // x^2 - 5x + 6 = 0 (roots: 2, 3)
+    bool polyInputMode = false;
+    std::string polyAStr = "1", polyBStr = "-5", polyCStr = "6";
+    int polyInputField = 0;  // 0=a, 1=b, 2=c
+    int polyExampleIndex = 0;
     
     // Laplace Transform mode variables
     std::vector<LaplaceStep> laplaceSteps;
@@ -649,6 +673,20 @@ int main(int argc, char* argv[]) {
         }
     };
     
+    // Lambda to process Polynomial Operations
+    auto processPolynomialOperations = [&]() {
+        try {
+            PolynomialOperations polyOps;
+            polyOps.solveQuadratic(polyA, polyB, polyC);
+            polySteps = polyOps.getSteps();
+            parseSuccess = true;
+            errorMsg.clear();
+        } catch (const std::exception& e) {
+            parseSuccess = false;
+            errorMsg = std::string("Error: ") + e.what();
+        }
+    };
+    
     // Lambda to process Laplace Transform
     auto processLaplaceTransform = [&]() {
         try {
@@ -928,6 +966,48 @@ int main(int argc, char* argv[]) {
                         tEvalStr += event.text.text;
                     }
                 }
+                else if (complexInputMode) {
+                    if (complexInputField == 0) {
+                        complexA1Str += event.text.text;
+                    } else if (complexInputField == 1) {
+                        complexB1Str += event.text.text;
+                    }
+                }
+                else if (seqInputMode) {
+                    if (seqInputField == 0) {
+                        seqAStr += event.text.text;
+                    } else if (seqInputField == 1) {
+                        seqDStr += event.text.text;
+                    } else if (seqInputField == 2) {
+                        seqNStr += event.text.text;
+                    }
+                }
+                else if (numConfigMode) {
+                    numX0Str += event.text.text;
+                }
+                else if (eigenInputMode) {
+                    if (eigenInputField == 0) {
+                        eigenAStr += event.text.text;
+                    } else if (eigenInputField == 1) {
+                        eigenBStr += event.text.text;
+                    } else if (eigenInputField == 2) {
+                        eigenCStr += event.text.text;
+                    } else if (eigenInputField == 3) {
+                        eigenDStr += event.text.text;
+                    }
+                }
+                else if (statsInputMode) {
+                    statsDataStr += event.text.text;
+                }
+                else if (polyInputMode) {
+                    if (polyInputField == 0) {
+                        polyAStr += event.text.text;
+                    } else if (polyInputField == 1) {
+                        polyBStr += event.text.text;
+                    } else if (polyInputField == 2) {
+                        polyCStr += event.text.text;
+                    }
+                }
             }
             else if (event.type == SDL_KEYDOWN) {
                 // Menu mode
@@ -1011,7 +1091,7 @@ int main(int argc, char* argv[]) {
                             menuSelection = std::max(0, menuSelection - 1);
                             break;
                         case SDLK_DOWN:
-                            menuSelection = std::min(20, menuSelection + 1);
+                            menuSelection = std::min(21, menuSelection + 1);
                             break;
                         case SDLK_RETURN:
                             if (menuSelection == 0) {
@@ -1127,6 +1207,10 @@ int main(int argc, char* argv[]) {
                                 currentMode = Mode::STATISTICS;
                                 scrollOffset = 0;
                                 processStatistics();
+                            } else if (menuSelection == 21) {
+                                currentMode = Mode::POLYNOMIAL_OPERATIONS;
+                                scrollOffset = 0;
+                                processPolynomialOperations();
                             }
                             break;
                     }
@@ -1544,6 +1628,176 @@ int main(int argc, char* argv[]) {
                         SDL_StopTextInput();
                     }
                 }
+                // Handle complex numbers input
+                else if (complexInputMode && currentMode == Mode::COMPLEX_NUMBERS) {
+                    if (event.key.keysym.sym == SDLK_RETURN) {
+                        try {
+                            complexA1 = std::stod(complexA1Str);
+                            complexB1 = std::stod(complexB1Str);
+                            complexInputMode = false;
+                            SDL_StopTextInput();
+                            processComplexNumbers();
+                        } catch (...) {
+                            errorMsg = "Invalid complex number input";
+                        }
+                    }
+                    else if (event.key.keysym.sym == SDLK_TAB) {
+                        complexInputField = (complexInputField + 1) % 2;
+                    }
+                    else if (event.key.keysym.sym == SDLK_BACKSPACE) {
+                        if (complexInputField == 0 && !complexA1Str.empty()) {
+                            complexA1Str = complexA1Str.substr(0, complexA1Str.length() - 1);
+                        } else if (complexInputField == 1 && !complexB1Str.empty()) {
+                            complexB1Str = complexB1Str.substr(0, complexB1Str.length() - 1);
+                        }
+                    }
+                    else if (event.key.keysym.sym == SDLK_ESCAPE) {
+                        complexInputMode = false;
+                        SDL_StopTextInput();
+                    }
+                }
+                // Handle sequences input
+                else if (seqInputMode && currentMode == Mode::SEQUENCES_SERIES) {
+                    if (event.key.keysym.sym == SDLK_RETURN) {
+                        try {
+                            seqA = std::stod(seqAStr);
+                            seqD = std::stod(seqDStr);
+                            seqN = std::stoi(seqNStr);
+                            seqInputMode = false;
+                            SDL_StopTextInput();
+                            processSequences();
+                        } catch (...) {
+                            errorMsg = "Invalid sequence input";
+                        }
+                    }
+                    else if (event.key.keysym.sym == SDLK_TAB) {
+                        seqInputField = (seqInputField + 1) % 3;
+                    }
+                    else if (event.key.keysym.sym == SDLK_BACKSPACE) {
+                        if (seqInputField == 0 && !seqAStr.empty()) {
+                            seqAStr = seqAStr.substr(0, seqAStr.length() - 1);
+                        } else if (seqInputField == 1 && !seqDStr.empty()) {
+                            seqDStr = seqDStr.substr(0, seqDStr.length() - 1);
+                        } else if (seqInputField == 2 && !seqNStr.empty()) {
+                            seqNStr = seqNStr.substr(0, seqNStr.length() - 1);
+                        }
+                    }
+                    else if (event.key.keysym.sym == SDLK_ESCAPE) {
+                        seqInputMode = false;
+                        SDL_StopTextInput();
+                    }
+                }
+                // Handle numerical methods config
+                else if (numConfigMode && currentMode == Mode::NUMERICAL_METHODS) {
+                    if (event.key.keysym.sym == SDLK_RETURN) {
+                        try {
+                            numX0 = std::stod(numX0Str);
+                            numConfigMode = false;
+                            SDL_StopTextInput();
+                            ast = parser.parse(currentExpression);
+                            processNumericalMethods();
+                        } catch (...) {
+                            errorMsg = "Invalid initial guess";
+                        }
+                    }
+                    else if (event.key.keysym.sym == SDLK_BACKSPACE && !numX0Str.empty()) {
+                        numX0Str = numX0Str.substr(0, numX0Str.length() - 1);
+                    }
+                    else if (event.key.keysym.sym == SDLK_ESCAPE) {
+                        numConfigMode = false;
+                        SDL_StopTextInput();
+                    }
+                }
+                // Handle eigenvalues input
+                else if (eigenInputMode && currentMode == Mode::EIGENVALUES) {
+                    if (event.key.keysym.sym == SDLK_RETURN) {
+                        try {
+                            eigenA = std::stod(eigenAStr);
+                            eigenB = std::stod(eigenBStr);
+                            eigenC = std::stod(eigenCStr);
+                            eigenD = std::stod(eigenDStr);
+                            eigenInputMode = false;
+                            SDL_StopTextInput();
+                            processEigenvalues();
+                        } catch (...) {
+                            errorMsg = "Invalid matrix input";
+                        }
+                    }
+                    else if (event.key.keysym.sym == SDLK_TAB) {
+                        eigenInputField = (eigenInputField + 1) % 4;
+                    }
+                    else if (event.key.keysym.sym == SDLK_BACKSPACE) {
+                        if (eigenInputField == 0 && !eigenAStr.empty()) {
+                            eigenAStr = eigenAStr.substr(0, eigenAStr.length() - 1);
+                        } else if (eigenInputField == 1 && !eigenBStr.empty()) {
+                            eigenBStr = eigenBStr.substr(0, eigenBStr.length() - 1);
+                        } else if (eigenInputField == 2 && !eigenCStr.empty()) {
+                            eigenCStr = eigenCStr.substr(0, eigenCStr.length() - 1);
+                        } else if (eigenInputField == 3 && !eigenDStr.empty()) {
+                            eigenDStr = eigenDStr.substr(0, eigenDStr.length() - 1);
+                        }
+                    }
+                    else if (event.key.keysym.sym == SDLK_ESCAPE) {
+                        eigenInputMode = false;
+                        SDL_StopTextInput();
+                    }
+                }
+                // Handle statistics data input
+                else if (statsInputMode && currentMode == Mode::STATISTICS) {
+                    if (event.key.keysym.sym == SDLK_RETURN) {
+                        try {
+                            statsData.clear();
+                            std::stringstream ss(statsDataStr);
+                            std::string item;
+                            while (std::getline(ss, item, ',')) {
+                                statsData.push_back(std::stod(item));
+                            }
+                            statsInputMode = false;
+                            SDL_StopTextInput();
+                            processStatistics();
+                        } catch (...) {
+                            errorMsg = "Invalid data format (use: 1, 2, 3, 4)";
+                        }
+                    }
+                    else if (event.key.keysym.sym == SDLK_BACKSPACE && !statsDataStr.empty()) {
+                        statsDataStr = statsDataStr.substr(0, statsDataStr.length() - 1);
+                    }
+                    else if (event.key.keysym.sym == SDLK_ESCAPE) {
+                        statsInputMode = false;
+                        SDL_StopTextInput();
+                    }
+                }
+                // Handle polynomial operations input
+                else if (polyInputMode && currentMode == Mode::POLYNOMIAL_OPERATIONS) {
+                    if (event.key.keysym.sym == SDLK_RETURN) {
+                        try {
+                            polyA = std::stod(polyAStr);
+                            polyB = std::stod(polyBStr);
+                            polyC = std::stod(polyCStr);
+                            polyInputMode = false;
+                            SDL_StopTextInput();
+                            processPolynomialOperations();
+                        } catch (...) {
+                            errorMsg = "Invalid polynomial coefficients";
+                        }
+                    }
+                    else if (event.key.keysym.sym == SDLK_TAB) {
+                        polyInputField = (polyInputField + 1) % 3;
+                    }
+                    else if (event.key.keysym.sym == SDLK_BACKSPACE) {
+                        if (polyInputField == 0 && !polyAStr.empty()) {
+                            polyAStr = polyAStr.substr(0, polyAStr.length() - 1);
+                        } else if (polyInputField == 1 && !polyBStr.empty()) {
+                            polyBStr = polyBStr.substr(0, polyBStr.length() - 1);
+                        } else if (polyInputField == 2 && !polyCStr.empty()) {
+                            polyCStr = polyCStr.substr(0, polyCStr.length() - 1);
+                        }
+                    }
+                    else if (event.key.keysym.sym == SDLK_ESCAPE) {
+                        polyInputMode = false;
+                        SDL_StopTextInput();
+                    }
+                }
                 // Normal calculus mode controls
                 else {
                     switch (event.key.keysym.sym) {
@@ -1636,7 +1890,7 @@ int main(int argc, char* argv[]) {
                             }
                             break;
                         case SDLK_c:
-                            // C key to configure (Taylor series and parametric curve)
+                            // C key to configure/custom input
                             if (currentMode == Mode::TAYLOR_SERIES) {
                                 taylorConfigMode = true;
                                 taylorConfigField = 0;
@@ -1644,6 +1898,28 @@ int main(int argc, char* argv[]) {
                             } else if (currentMode == Mode::PARAMETRIC_CURVE) {
                                 parametricConfigMode = true;
                                 parametricConfigField = 0;
+                                SDL_StartTextInput();
+                            } else if (currentMode == Mode::COMPLEX_NUMBERS) {
+                                complexInputMode = true;
+                                complexInputField = 0;
+                                SDL_StartTextInput();
+                            } else if (currentMode == Mode::SEQUENCES_SERIES) {
+                                seqInputMode = true;
+                                seqInputField = 0;
+                                SDL_StartTextInput();
+                            } else if (currentMode == Mode::NUMERICAL_METHODS) {
+                                numConfigMode = true;
+                                SDL_StartTextInput();
+                            } else if (currentMode == Mode::EIGENVALUES) {
+                                eigenInputMode = true;
+                                eigenInputField = 0;
+                                SDL_StartTextInput();
+                            } else if (currentMode == Mode::STATISTICS) {
+                                statsInputMode = true;
+                                SDL_StartTextInput();
+                            } else if (currentMode == Mode::POLYNOMIAL_OPERATIONS) {
+                                polyInputMode = true;
+                                polyInputField = 0;
                                 SDL_StartTextInput();
                             }
                             break;
@@ -1872,6 +2148,14 @@ int main(int argc, char* argv[]) {
             std::string opt21 = (menuSelection == 20) ? "> 21. Statistics & Probability" : "  21. Statistics & Probability";
             SDL_Color color21 = (menuSelection == 20) ? green : white;
             textRenderer.renderText(opt21, leftMargin + 40, y, color21);
+            y += lineHeight + 2;
+            
+            // Menu option 22
+            std::string opt22 = (menuSelection == 21) ? "> 22. Polynomial Operations" : "  22. Polynomial Operations";
+            SDL_Color color22 = (menuSelection == 21) ? green : white;
+            textRenderer.renderText(opt22, leftMargin + 40, y, color22);
+            y += lineHeight;
+            textRenderer.renderText("     Solve quadratic equations with step-by-step solutions", leftMargin + 60, y, gray);
             y += lineHeight + 10;
             
             textRenderer.renderText("Controls:", leftMargin, y, yellow);
@@ -2719,30 +3003,45 @@ int main(int argc, char* argv[]) {
             textRenderer.renderText("Complex Numbers Mode", leftMargin, y, cyan);
             y += lineHeight + 10;
             
-            std::string z1 = "z1 = " + std::to_string(complexA1) + " + " + std::to_string(complexB1) + "i";
-            textRenderer.renderText(z1, leftMargin, y, green);
-            y += lineHeight + 15;
-            
-            if (parseSuccess && !complexSteps.empty()) {
-                textRenderer.renderText("--- Complex Number Analysis ---", leftMargin, y, yellow);
+            if (complexInputMode) {
+                textRenderer.renderText("Enter Complex Number (a + bi):", leftMargin, y, yellow);
+                y += lineHeight + 10;
+                
+                std::string realPrompt = (complexInputField == 0 ? "> " : "  ") + std::string("Real part (a): ") + complexA1Str + (complexInputField == 0 ? "_" : "");
+                textRenderer.renderText(realPrompt, leftMargin + 20, y, complexInputField == 0 ? green : white);
                 y += lineHeight;
                 
-                for (size_t i = 0; i < complexSteps.size(); i++) {
-                    const auto& step = complexSteps[i];
-                    if (!step.description.empty()) {
-                        textRenderer.renderText(step.description, leftMargin, y, white);
-                        y += lineHeight;
-                    }
-                    if (!step.expression.empty()) {
-                        textRenderer.renderText("  " + step.expression, leftMargin + 20, y, white);
-                        y += lineHeight + 3;
-                    }
-                }
+                std::string imagPrompt = (complexInputField == 1 ? "> " : "  ") + std::string("Imaginary part (b): ") + complexB1Str + (complexInputField == 1 ? "_" : "");
+                textRenderer.renderText(imagPrompt, leftMargin + 20, y, complexInputField == 1 ? green : white);
+                y += lineHeight + 10;
                 
-                y += 10;
-                textRenderer.renderText("ESC: menu", 20, 690, gray);
-            } else if (!errorMsg.empty()) {
-                textRenderer.renderText(errorMsg, leftMargin, y, {255, 100, 100, 255});
+                textRenderer.renderText("(TAB to switch, ENTER to compute, ESC to cancel)", leftMargin, y, gray);
+            } else {
+                std::string z1 = "z1 = " + std::to_string(complexA1) + " + " + std::to_string(complexB1) + "i";
+                textRenderer.renderText(z1, leftMargin, y, green);
+                y += lineHeight + 15;
+                
+                if (parseSuccess && !complexSteps.empty()) {
+                    textRenderer.renderText("--- Complex Number Analysis ---", leftMargin, y, yellow);
+                    y += lineHeight;
+                    
+                    for (size_t i = 0; i < complexSteps.size(); i++) {
+                        const auto& step = complexSteps[i];
+                        if (!step.description.empty()) {
+                            textRenderer.renderText(step.description, leftMargin, y, white);
+                            y += lineHeight;
+                        }
+                        if (!step.expression.empty()) {
+                            textRenderer.renderText("  " + step.expression, leftMargin + 20, y, white);
+                            y += lineHeight + 3;
+                        }
+                    }
+                    
+                    y += 10;
+                    textRenderer.renderText("C: custom input | ESC: menu", 20, 690, gray);
+                } else if (!errorMsg.empty()) {
+                    textRenderer.renderText(errorMsg, leftMargin, y, {255, 100, 100, 255});
+                }
             }
         }
         // === SEQUENCES & SERIES MODE ===
@@ -2751,30 +3050,49 @@ int main(int argc, char* argv[]) {
             textRenderer.renderText("Sequences & Series Mode", leftMargin, y, cyan);
             y += lineHeight + 10;
             
-            std::string params = "Arithmetic: a=" + std::to_string(seqA) + ", d=" + std::to_string(seqD) + ", n=" + std::to_string(seqN);
-            textRenderer.renderText(params, leftMargin, y, green);
-            y += lineHeight + 15;
-            
-            if (parseSuccess && !sequenceSteps.empty()) {
-                textRenderer.renderText("--- Sequence Analysis ---", leftMargin, y, yellow);
+            if (seqInputMode) {
+                textRenderer.renderText("Enter Arithmetic Sequence Parameters:", leftMargin, y, yellow);
+                y += lineHeight + 10;
+                
+                std::string aPrompt = (seqInputField == 0 ? "> " : "  ") + std::string("First term (a): ") + seqAStr + (seqInputField == 0 ? "_" : "");
+                textRenderer.renderText(aPrompt, leftMargin + 20, y, seqInputField == 0 ? green : white);
                 y += lineHeight;
                 
-                for (size_t i = 0; i < sequenceSteps.size(); i++) {
-                    const auto& step = sequenceSteps[i];
-                    if (!step.description.empty()) {
-                        textRenderer.renderText(step.description, leftMargin, y, white);
-                        y += lineHeight;
-                    }
-                    if (!step.expression.empty()) {
-                        textRenderer.renderText("  " + step.expression, leftMargin + 20, y, white);
-                        y += lineHeight + 3;
-                    }
-                }
+                std::string dPrompt = (seqInputField == 1 ? "> " : "  ") + std::string("Common difference (d): ") + seqDStr + (seqInputField == 1 ? "_" : "");
+                textRenderer.renderText(dPrompt, leftMargin + 20, y, seqInputField == 1 ? green : white);
+                y += lineHeight;
                 
-                y += 10;
-                textRenderer.renderText("ESC: menu", 20, 690, gray);
-            } else if (!errorMsg.empty()) {
-                textRenderer.renderText(errorMsg, leftMargin, y, {255, 100, 100, 255});
+                std::string nPrompt = (seqInputField == 2 ? "> " : "  ") + std::string("Number of terms (n): ") + seqNStr + (seqInputField == 2 ? "_" : "");
+                textRenderer.renderText(nPrompt, leftMargin + 20, y, seqInputField == 2 ? green : white);
+                y += lineHeight + 10;
+                
+                textRenderer.renderText("(TAB to switch, ENTER to compute, ESC to cancel)", leftMargin, y, gray);
+            } else {
+                std::string params = "Arithmetic: a=" + std::to_string(seqA) + ", d=" + std::to_string(seqD) + ", n=" + std::to_string(seqN);
+                textRenderer.renderText(params, leftMargin, y, green);
+                y += lineHeight + 15;
+                
+                if (parseSuccess && !sequenceSteps.empty()) {
+                    textRenderer.renderText("--- Sequence Analysis ---", leftMargin, y, yellow);
+                    y += lineHeight;
+                    
+                    for (size_t i = 0; i < sequenceSteps.size(); i++) {
+                        const auto& step = sequenceSteps[i];
+                        if (!step.description.empty()) {
+                            textRenderer.renderText(step.description, leftMargin, y, white);
+                            y += lineHeight;
+                        }
+                        if (!step.expression.empty()) {
+                            textRenderer.renderText("  " + step.expression, leftMargin + 20, y, white);
+                            y += lineHeight + 3;
+                        }
+                    }
+                    
+                    y += 10;
+                    textRenderer.renderText("C: custom input | ESC: menu", 20, 690, gray);
+                } else if (!errorMsg.empty()) {
+                    textRenderer.renderText(errorMsg, leftMargin, y, {255, 100, 100, 255});
+                }
             }
         }
         // === NUMERICAL METHODS MODE ===
@@ -2783,33 +3101,49 @@ int main(int argc, char* argv[]) {
             textRenderer.renderText("Numerical Methods Mode - Newton-Raphson", leftMargin, y, cyan);
             y += lineHeight + 10;
             
-            std::string func = "f(x) = " + currentExpression;
-            textRenderer.renderText(func, leftMargin, y, green);
-            y += lineHeight;
-            std::string initial = "Initial guess: x0 = " + std::to_string(numX0);
-            textRenderer.renderText(initial, leftMargin, y, white);
-            y += lineHeight + 15;
-            
-            if (parseSuccess && !numericalSteps.empty()) {
-                textRenderer.renderText("--- Newton-Raphson Method ---", leftMargin, y, yellow);
+            if (inputMode) {
+                std::string inputPrompt = "Type function f(x): " + userInput + "_";
+                textRenderer.renderText(inputPrompt, leftMargin, y, yellow);
+                textRenderer.renderText("(Press ENTER to set, ESC to cancel)", leftMargin, y + lineHeight, gray);
+                y += lineHeight * 2 + 15;
+            } else if (numConfigMode) {
+                textRenderer.renderText("Configure Initial Guess:", leftMargin, y, yellow);
+                y += lineHeight + 10;
+                
+                std::string x0Prompt = "> Initial guess (x0): " + numX0Str + "_";
+                textRenderer.renderText(x0Prompt, leftMargin + 20, y, green);
+                y += lineHeight + 10;
+                
+                textRenderer.renderText("(ENTER to compute, ESC to cancel)", leftMargin, y, gray);
+            } else {
+                std::string func = "f(x) = " + currentExpression;
+                textRenderer.renderText(func, leftMargin, y, green);
                 y += lineHeight;
+                std::string initial = "Initial guess: x0 = " + std::to_string(numX0);
+                textRenderer.renderText(initial, leftMargin, y, white);
+                y += lineHeight + 15;
                 
-                for (size_t i = 0; i < numericalSteps.size(); i++) {
-                    const auto& step = numericalSteps[i];
-                    if (!step.description.empty()) {
-                        textRenderer.renderText(step.description, leftMargin, y, white);
-                        y += lineHeight;
+                if (parseSuccess && !numericalSteps.empty()) {
+                    textRenderer.renderText("--- Newton-Raphson Method ---", leftMargin, y, yellow);
+                    y += lineHeight;
+                    
+                    for (size_t i = 0; i < numericalSteps.size(); i++) {
+                        const auto& step = numericalSteps[i];
+                        if (!step.description.empty()) {
+                            textRenderer.renderText(step.description, leftMargin, y, white);
+                            y += lineHeight;
+                        }
+                        if (!step.expression.empty()) {
+                            textRenderer.renderText("  " + step.expression, leftMargin + 20, y, white);
+                            y += lineHeight + 3;
+                        }
                     }
-                    if (!step.expression.empty()) {
-                        textRenderer.renderText("  " + step.expression, leftMargin + 20, y, white);
-                        y += lineHeight + 3;
-                    }
+                    
+                    y += 10;
+                    textRenderer.renderText("ENTER: custom | C: config x0 | ESC: menu", 20, 690, gray);
+                } else if (!errorMsg.empty()) {
+                    textRenderer.renderText(errorMsg, leftMargin, y, {255, 100, 100, 255});
                 }
-                
-                y += 10;
-                textRenderer.renderText("ESC: menu", 20, 690, gray);
-            } else if (!errorMsg.empty()) {
-                textRenderer.renderText(errorMsg, leftMargin, y, {255, 100, 100, 255});
             }
         }
         // === EIGENVALUES MODE ===
@@ -2818,31 +3152,54 @@ int main(int argc, char* argv[]) {
             textRenderer.renderText("Eigenvalues & Eigenvectors Mode", leftMargin, y, cyan);
             y += lineHeight + 10;
             
-            std::string matrixLine = "Matrix A = [[" + std::to_string(eigenA) + ", " + std::to_string(eigenB) + 
-                                     "], [" + std::to_string(eigenC) + ", " + std::to_string(eigenD) + "]]";
-            textRenderer.renderText(matrixLine, leftMargin, y, green);
-            y += lineHeight + 15;
-            
-            if (parseSuccess && !eigenSteps.empty()) {
-                textRenderer.renderText("--- Eigenvalue Analysis ---", leftMargin, y, yellow);
+            if (eigenInputMode) {
+                textRenderer.renderText("Enter 2x2 Matrix Elements:", leftMargin, y, yellow);
+                y += lineHeight + 10;
+                
+                std::string aPrompt = (eigenInputField == 0 ? "> " : "  ") + std::string("A[0][0]: ") + eigenAStr + (eigenInputField == 0 ? "_" : "");
+                textRenderer.renderText(aPrompt, leftMargin + 20, y, eigenInputField == 0 ? green : white);
                 y += lineHeight;
                 
-                for (size_t i = 0; i < eigenSteps.size(); i++) {
-                    const auto& step = eigenSteps[i];
-                    if (!step.description.empty()) {
-                        textRenderer.renderText(step.description, leftMargin, y, white);
-                        y += lineHeight;
-                    }
-                    if (!step.expression.empty()) {
-                        textRenderer.renderText("  " + step.expression, leftMargin + 20, y, white);
-                        y += lineHeight + 3;
-                    }
-                }
+                std::string bPrompt = (eigenInputField == 1 ? "> " : "  ") + std::string("A[0][1]: ") + eigenBStr + (eigenInputField == 1 ? "_" : "");
+                textRenderer.renderText(bPrompt, leftMargin + 20, y, eigenInputField == 1 ? green : white);
+                y += lineHeight;
                 
-                y += 10;
-                textRenderer.renderText("ESC: menu", 20, 690, gray);
-            } else if (!errorMsg.empty()) {
-                textRenderer.renderText(errorMsg, leftMargin, y, {255, 100, 100, 255});
+                std::string cPrompt = (eigenInputField == 2 ? "> " : "  ") + std::string("A[1][0]: ") + eigenCStr + (eigenInputField == 2 ? "_" : "");
+                textRenderer.renderText(cPrompt, leftMargin + 20, y, eigenInputField == 2 ? green : white);
+                y += lineHeight;
+                
+                std::string dPrompt = (eigenInputField == 3 ? "> " : "  ") + std::string("A[1][1]: ") + eigenDStr + (eigenInputField == 3 ? "_" : "");
+                textRenderer.renderText(dPrompt, leftMargin + 20, y, eigenInputField == 3 ? green : white);
+                y += lineHeight + 10;
+                
+                textRenderer.renderText("(TAB to switch, ENTER to compute, ESC to cancel)", leftMargin, y, gray);
+            } else {
+                std::string matrixLine = "Matrix A = [[" + std::to_string(eigenA) + ", " + std::to_string(eigenB) + 
+                                         "], [" + std::to_string(eigenC) + ", " + std::to_string(eigenD) + "]]";
+                textRenderer.renderText(matrixLine, leftMargin, y, green);
+                y += lineHeight + 15;
+                
+                if (parseSuccess && !eigenSteps.empty()) {
+                    textRenderer.renderText("--- Eigenvalue Analysis ---", leftMargin, y, yellow);
+                    y += lineHeight;
+                    
+                    for (size_t i = 0; i < eigenSteps.size(); i++) {
+                        const auto& step = eigenSteps[i];
+                        if (!step.description.empty()) {
+                            textRenderer.renderText(step.description, leftMargin, y, white);
+                            y += lineHeight;
+                        }
+                        if (!step.expression.empty()) {
+                            textRenderer.renderText("  " + step.expression, leftMargin + 20, y, white);
+                            y += lineHeight + 3;
+                        }
+                    }
+                    
+                    y += 10;
+                    textRenderer.renderText("C: custom input | ESC: menu", 20, 690, gray);
+                } else if (!errorMsg.empty()) {
+                    textRenderer.renderText(errorMsg, leftMargin, y, {255, 100, 100, 255});
+                }
             }
         }
         // === STATISTICS MODE ===
@@ -2851,35 +3208,107 @@ int main(int argc, char* argv[]) {
             textRenderer.renderText("Statistics & Probability Mode", leftMargin, y, cyan);
             y += lineHeight + 10;
             
-            std::string dataStr = "Data: {";
-            for (size_t i = 0; i < statsData.size(); i++) {
-                if (i > 0) dataStr += ", ";
-                dataStr += std::to_string((int)statsData[i]);
+            if (statsInputMode) {
+                textRenderer.renderText("Enter Data (comma-separated):", leftMargin, y, yellow);
+                y += lineHeight + 10;
+                
+                std::string dataPrompt = "> Data: " + statsDataStr + "_";
+                textRenderer.renderText(dataPrompt, leftMargin + 20, y, green);
+                y += lineHeight + 10;
+                
+                textRenderer.renderText("Example: 2, 4, 6, 8, 10", leftMargin + 20, y, gray);
+                y += lineHeight;
+                textRenderer.renderText("(ENTER to compute, ESC to cancel)", leftMargin, y, gray);
+            } else {
+                std::string dataStr = "Data: {";
+                for (size_t i = 0; i < statsData.size(); i++) {
+                    if (i > 0) dataStr += ", ";
+                    dataStr += std::to_string((int)statsData[i]);
+                }
+                dataStr += "}";
+                textRenderer.renderText(dataStr, leftMargin, y, green);
+                y += lineHeight + 15;
+                
+                if (parseSuccess && !statsSteps.empty()) {
+                    textRenderer.renderText("--- Statistical Analysis ---", leftMargin, y, yellow);
+                    y += lineHeight;
+                    
+                    for (size_t i = 0; i < statsSteps.size(); i++) {
+                        const auto& step = statsSteps[i];
+                        if (!step.description.empty()) {
+                            textRenderer.renderText(step.description, leftMargin, y, white);
+                            y += lineHeight;
+                        }
+                        if (!step.expression.empty()) {
+                            textRenderer.renderText("  " + step.expression, leftMargin + 20, y, white);
+                            y += lineHeight + 3;
+                        }
+                    }
+                    
+                    y += 10;
+                    textRenderer.renderText("C: custom input | ESC: menu", 20, 690, gray);
+                } else if (!errorMsg.empty()) {
+                    textRenderer.renderText(errorMsg, leftMargin, y, {255, 100, 100, 255});
+                }
             }
-            dataStr += "}";
-            textRenderer.renderText(dataStr, leftMargin, y, green);
-            y += lineHeight + 15;
+        }
+        // === POLYNOMIAL OPERATIONS MODE ===
+        else if (currentMode == Mode::POLYNOMIAL_OPERATIONS) {
+            y = 20 - scrollOffset;
+            textRenderer.renderText("Polynomial Operations - Quadratic Solver", leftMargin, y, cyan);
+            y += lineHeight + 10;
             
-            if (parseSuccess && !statsSteps.empty()) {
-                textRenderer.renderText("--- Statistical Analysis ---", leftMargin, y, yellow);
+            if (polyInputMode) {
+                textRenderer.renderText("Enter Quadratic Coefficients (ax^2 + bx + c = 0):", leftMargin, y, yellow);
+                y += lineHeight + 10;
+                
+                std::string aPrompt = (polyInputField == 0 ? "> " : "  ") + std::string("Coefficient a (x^2): ") + polyAStr + (polyInputField == 0 ? "_" : "");
+                textRenderer.renderText(aPrompt, leftMargin + 20, y, polyInputField == 0 ? green : white);
                 y += lineHeight;
                 
-                for (size_t i = 0; i < statsSteps.size(); i++) {
-                    const auto& step = statsSteps[i];
-                    if (!step.description.empty()) {
-                        textRenderer.renderText(step.description, leftMargin, y, white);
-                        y += lineHeight;
-                    }
-                    if (!step.expression.empty()) {
-                        textRenderer.renderText("  " + step.expression, leftMargin + 20, y, white);
-                        y += lineHeight + 3;
-                    }
-                }
+                std::string bPrompt = (polyInputField == 1 ? "> " : "  ") + std::string("Coefficient b (x): ") + polyBStr + (polyInputField == 1 ? "_" : "");
+                textRenderer.renderText(bPrompt, leftMargin + 20, y, polyInputField == 1 ? green : white);
+                y += lineHeight;
                 
-                y += 10;
-                textRenderer.renderText("ESC: menu", 20, 690, gray);
-            } else if (!errorMsg.empty()) {
-                textRenderer.renderText(errorMsg, leftMargin, y, {255, 100, 100, 255});
+                std::string cPrompt = (polyInputField == 2 ? "> " : "  ") + std::string("Coefficient c (constant): ") + polyCStr + (polyInputField == 2 ? "_" : "");
+                textRenderer.renderText(cPrompt, leftMargin + 20, y, polyInputField == 2 ? green : white);
+                y += lineHeight + 10;
+                
+                textRenderer.renderText("(TAB to switch, ENTER to solve, ESC to cancel)", leftMargin, y, gray);
+                y += lineHeight;
+                textRenderer.renderText("Example: a=1, b=-5, c=6  =>  x^2 - 5x + 6 = 0", leftMargin, y, gray);
+            } else {
+                std::ostringstream eqOss;
+                eqOss << std::fixed << std::setprecision(2);
+                eqOss << "Equation: " << polyA << "x^2 ";
+                if (polyB >= 0) eqOss << "+ ";
+                eqOss << polyB << "x ";
+                if (polyC >= 0) eqOss << "+ ";
+                eqOss << polyC << " = 0";
+                textRenderer.renderText(eqOss.str(), leftMargin, y, green);
+                y += lineHeight + 15;
+                
+                if (parseSuccess && !polySteps.empty()) {
+                    textRenderer.renderText("--- Step-by-Step Solution ---", leftMargin, y, yellow);
+                    y += lineHeight;
+                    
+                    for (size_t i = 0; i < polySteps.size(); i++) {
+                        const auto& step = polySteps[i];
+                        if (!step.description.empty()) {
+                            textRenderer.renderText(step.description, leftMargin, y, white);
+                            y += lineHeight;
+                        }
+                        if (!step.expression.empty()) {
+                            textRenderer.renderText("  " + step.expression, leftMargin + 20, y, white);
+                            y += lineHeight + 3;
+                        }
+                    }
+                    
+                    y += 10;
+                    textRenderer.renderText("C: custom input | ESC: menu", 20, 690, gray);
+                } else if (!errorMsg.empty()) {
+                    textRenderer.renderText(errorMsg, leftMargin, y, {255, 100, 100, 255});
+                }
             }
         }
         // === LAPLACE TRANSFORM MODE ===

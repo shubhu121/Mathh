@@ -1,0 +1,3 @@
+D:/Mathh/build/CMakeFiles/MathEngineUTF8.dir
+D:/Mathh/build/CMakeFiles/edit_cache.dir
+D:/Mathh/build/CMakeFiles/rebuild_cache.dir
